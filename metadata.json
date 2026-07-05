@@ -1,0 +1,6 @@
+{
+  "name": "Art Class Semester Portfolio",
+  "description": "An interactive, curated digital portfolio of artworks from an Art Application course. Features thematic galleries for different techniques and styles (Minimalism, Pop Art, Impressionism, Surrealism, Charcoal Sketching) and interactive emotional critiques from an AI Art Professor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
