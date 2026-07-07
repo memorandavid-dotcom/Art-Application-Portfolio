@@ -11,6 +11,7 @@ import {
   Layers,
   Activity,
   Compass,
+  ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
   Heart,
@@ -87,22 +88,22 @@ const THEME_CONFIGS = {
     inputBgClass: "bg-[#120608]"
   },
   reflection: {
-    wrapperClass: "bg-[#FAF8F5] text-[#1C1917] font-sans selection:bg-stone-200 transition-all duration-700 relative",
-    headerBg: "bg-[#F5F2EB] border-b border-stone-300",
-    headerTitleClass: "font-serif text-5xl sm:text-6xl font-black tracking-normal leading-none text-stone-900 italic",
-    navBg: "bg-[#FAF8F5] text-stone-800 border-b border-stone-200",
-    cardClass: "bg-[#FCFAF7] overflow-hidden border border-stone-400 shadow-[4px_4px_0px_rgba(0,0,0,0.08)] hover:shadow-[6px_6px_0px_rgba(0,0,0,0.12)] hover:translate-y-[-2px] transition-all flex flex-col rounded-md",
-    cardBodyClass: "p-6 flex-1 flex flex-col justify-between space-y-4 bg-[#FCFAF7] text-stone-900",
-    headerBadgeClass: "bg-stone-100 text-stone-800 border border-stone-300",
-    buttonClass: "bg-stone-900 hover:bg-stone-800 text-white border border-stone-950 rounded-md",
-    headingFont: "font-serif text-4xl sm:text-5xl font-bold tracking-tight text-stone-900",
-    accentColor: "text-stone-800 border-stone-800",
-    bannerClass: "bg-[#FAF5EF] border border-stone-300 text-stone-900 rounded-md shadow-sm",
-    accentText: "text-[#3D2612]",
-    modalContentClass: "bg-white text-stone-900 border border-stone-300 p-6 space-y-4 rounded-md",
-    modalHeaderClass: "bg-stone-900 text-white p-5 rounded-t-md",
-    formBgClass: "bg-white",
-    inputBgClass: "bg-stone-50"
+    wrapperClass: "bg-[#1C1917] text-[#FAF7F5] font-sans selection:bg-stone-800 transition-all duration-700 relative",
+    headerBg: "bg-[#171412] border-b border-stone-800",
+    headerTitleClass: "font-serif text-5xl sm:text-6xl font-black tracking-normal leading-none text-stone-100 italic",
+    navBg: "bg-[#24201E] text-stone-100 border-b border-stone-800",
+    cardClass: "bg-[#24201E] overflow-hidden border border-stone-800 shadow-[4px_4px_0px_rgba(253,224,71,0.05)] hover:shadow-[6px_6px_0px_rgba(253,224,71,0.1)] hover:translate-y-[-2px] transition-all flex flex-col rounded-md",
+    cardBodyClass: "p-6 flex-1 flex flex-col justify-between space-y-4 bg-[#24201E] text-[#FAF7F5]",
+    headerBadgeClass: "bg-stone-800 text-stone-200 border border-stone-700",
+    buttonClass: "bg-stone-200 hover:bg-stone-300 text-stone-900 border border-stone-200 rounded-md",
+    headingFont: "font-serif text-4xl sm:text-5xl font-bold tracking-tight text-stone-100",
+    accentColor: "text-stone-200 border-stone-700",
+    bannerClass: "bg-[#2E2925] border border-stone-800 text-stone-100 rounded-md shadow-sm",
+    accentText: "text-yellow-400",
+    modalContentClass: "bg-[#24201E] text-stone-100 border border-stone-800 p-6 space-y-4 rounded-md",
+    modalHeaderClass: "bg-stone-800 text-white p-5 rounded-t-md",
+    formBgClass: "bg-[#24201E]",
+    inputBgClass: "bg-[#1C1917]"
   },
   theater: {
     wrapperClass: "bg-[#0B0304] text-[#F3E8E8] font-serif selection:bg-red-950 transition-all duration-700 relative",
@@ -322,6 +323,194 @@ export default function App() {
   // Museum and Theater section custom states
   const [activeMuseumBooth, setActiveMuseumBooth] = useState<"booth-1" | "booth-2" | "booth-3">("booth-1");
   const [theaterSpotlight, setTheaterSpotlight] = useState(true);
+  const [curtainsOpen, setCurtainsOpen] = useState(true);
+  const [isApplausePlaying, setIsApplausePlaying] = useState(false);
+  const [reflectionViewMode, setReflectionViewMode] = useState<"ppt" | "images">("ppt");
+  const [activeReflectionSlide, setActiveReflectionSlide] = useState(0);
+
+  // Theater Confetti physics engine state (highly optimized for GPU-accelerated CSS animations)
+  const [stageConfetti, setStageConfetti] = useState<{
+    id: number;
+    side: "left" | "right";
+    color: string;
+    size: number;
+    xDist: number;
+    yDist: number;
+    rotEnd: number;
+    duration: number;
+    delay: number;
+  }[]>([]);
+
+  // Trigger high-performance GPU-accelerated confetti explosion
+  const triggerStageConfetti = () => {
+    const colors = ["#F59E0B", "#EF4444", "#3B82F6", "#10B981", "#EC4899", "#8B5CF6", "#F43F5E", "#06B6D4"];
+    const particles = [];
+    
+    // Left nozzle (shoots up and right)
+    for (let i = 0; i < 35; i++) {
+      particles.push({
+        id: i,
+        side: "left" as const,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 5 + Math.random() * 8, // 5px to 13px
+        xDist: 80 + Math.random() * 220, // horizontal distance (pixels)
+        yDist: -220 - Math.random() * 140, // upward throw (negative pixels)
+        rotEnd: (Math.random() * 540) - 270, // degrees of spin
+        duration: 2.0 + Math.random() * 1.5, // seconds of flight
+        delay: Math.random() * 0.15, // slight staggered delay
+      });
+    }
+
+    // Right nozzle (shoots up and left)
+    for (let i = 0; i < 35; i++) {
+      particles.push({
+        id: i + 35,
+        side: "right" as const,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 5 + Math.random() * 8,
+        xDist: -80 - Math.random() * 220, // shoots left
+        yDist: -220 - Math.random() * 140,
+        rotEnd: (Math.random() * 540) - 270,
+        duration: 2.0 + Math.random() * 1.5,
+        delay: Math.random() * 0.15,
+      });
+    }
+
+    setStageConfetti(particles);
+
+    // Automatically clean up after 4.5 seconds to prevent DOM buildup
+    setTimeout(() => {
+      setStageConfetti([]);
+    }, 4500);
+  };
+
+  // High-fidelity Web Audio API crowd applause and cheering synthesizer (realistic fallback)
+  const playSynthesizedApplause = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const duration = 5.5;
+      const sampleRate = ctx.sampleRate;
+      const bufferSize = sampleRate * duration;
+      const buffer = ctx.createBuffer(1, bufferSize, sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      // Clean, soft cheering roar (low amplitude, mid-frequency resonance to avoid wind/rain storm sound)
+      const roarSource = ctx.createBufferSource();
+      roarSource.buffer = buffer;
+      const roarFilter = ctx.createBiquadFilter();
+      roarFilter.type = "bandpass";
+      roarFilter.frequency.setValueAtTime(550, ctx.currentTime);
+      roarFilter.Q.setValueAtTime(3.0, ctx.currentTime); // High Q makes it tonal/humming like a crowd cheering "Woo!" rather than white noise wind.
+      roarFilter.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 1.0);
+      roarFilter.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 4.0);
+      
+      const roarGain = ctx.createGain();
+      roarGain.gain.setValueAtTime(0, ctx.currentTime);
+      roarGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 0.5); // Much softer gain
+      roarGain.gain.exponentialRampToValueAtTime(0.02, ctx.currentTime + 3.5);
+      roarGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      
+      roarSource.connect(roarFilter);
+      roarFilter.connect(roarGain);
+      roarGain.connect(ctx.destination);
+      roarSource.start(ctx.currentTime);
+      roarSource.stop(ctx.currentTime + duration);
+
+      // Synthesize 3 distinct cheering vocalizations (harmonic whistles)
+      for (let w = 0; w < 3; w++) {
+        const startSec = Math.random() * 1.5;
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(400 + Math.random() * 200, ctx.currentTime + startSec);
+        osc.frequency.exponentialRampToValueAtTime(800 + Math.random() * 400, ctx.currentTime + startSec + 0.3);
+        osc.frequency.exponentialRampToValueAtTime(500 + Math.random() * 100, ctx.currentTime + startSec + 1.2);
+        
+        oscGain.gain.setValueAtTime(0, ctx.currentTime + startSec);
+        oscGain.gain.linearRampToValueAtTime(0.03, ctx.currentTime + startSec + 0.2);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startSec + 1.2);
+        
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(ctx.currentTime + startSec);
+        osc.stop(ctx.currentTime + startSec + 1.3);
+      }
+
+      // Rhythmic individual hand claps (decreased number of clappers and sharper envelopes to prevent static rain sound)
+      const numClappers = 10;
+      for (let c = 0; c < numClappers; c++) {
+        const delay = Math.random() * 0.4;
+        const initialClapRate = 0.22 + Math.random() * 0.12; // Slower, more distinct rhythmic claps
+        let clapTime = ctx.currentTime + delay;
+        while (clapTime < ctx.currentTime + duration - 0.5) {
+          const clapSource = ctx.createBufferSource();
+          clapSource.buffer = buffer;
+          
+          const clapFilter = ctx.createBiquadFilter();
+          clapFilter.type = "bandpass";
+          clapFilter.frequency.value = 950 + Math.random() * 200; // Hand resonance
+          clapFilter.Q.value = 4.0; // Highly resonant to sound organic
+          
+          const clapGain = ctx.createGain();
+          const clapLength = 0.008 + Math.random() * 0.012; // Ultra short clap impulse
+          clapGain.gain.setValueAtTime(0, clapTime);
+          clapGain.gain.linearRampToValueAtTime(0.05 + Math.random() * 0.05, clapTime + 0.001);
+          clapGain.gain.exponentialRampToValueAtTime(0.001, clapTime + clapLength);
+          
+          clapSource.connect(clapFilter);
+          clapFilter.connect(clapGain);
+          clapGain.connect(ctx.destination);
+          
+          clapSource.start(clapTime);
+          clapSource.stop(clapTime + clapLength + 0.05);
+          
+          const slowdown = clapTime > ctx.currentTime + duration * 0.5 ? (clapTime - (ctx.currentTime + duration * 0.5)) * 0.12 : 0;
+          clapTime += initialClapRate + slowdown + (Math.random() * 0.05 - 0.025);
+        }
+      }
+    } catch (err) {
+      console.warn("Web Audio synthesis failed:", err);
+    }
+  };
+
+  const handlePlayApplause = () => {
+    if (isApplausePlaying) return;
+    setIsApplausePlaying(true);
+    
+    // 1. Throw high-performance GPU-accelerated confetti on the stage
+    triggerStageConfetti();
+
+    // 2. Play back real high-quality media file audio with synthesiser fallback if blocked
+    try {
+      const audio = new Audio("https://www.soundjay.com/human/sounds/applause-01.mp3");
+      audio.volume = 0.65;
+      audio.play()
+        .then(() => {
+          // Successfully playing real authentic crowd applause MP3! No need to play synthetic fallbacks.
+          setTimeout(() => {
+            audio.pause();
+            setIsApplausePlaying(false);
+          }, 5500);
+        })
+        .catch((err) => {
+          console.log("Audio file playback blocked/failed. Playing synthesized fallback...");
+          playSynthesizedApplause();
+          setTimeout(() => {
+            setIsApplausePlaying(false);
+          }, 5500);
+        });
+    } catch (e) {
+      playSynthesizedApplause();
+      setTimeout(() => {
+        setIsApplausePlaying(false);
+      }, 5500);
+    }
+  };
 
   // AI Professor Critique loading state
   const [isCritiquing, setIsCritiquing] = useState(false);
@@ -529,13 +718,37 @@ export default function App() {
             </div>
             
             {/* Student metadata badge */}
-            <div className={`flex items-center gap-3 p-4 border self-start md:self-auto shadow-sm transition-all duration-500 ${activeTab === "museum" || activeTab === "theater" ? "bg-[#1E0E10] border-yellow-500/30 text-[#EAD5D5]" : activeTab === "journey" || activeTab === "reflection" ? "bg-[#FCF9F5] border-amber-400/60 text-amber-950" : "bg-white border-[#1A1A1A] text-[#1A1A1A]"}`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-serif text-lg font-semibold transition-colors duration-500 ${activeTab === "museum" || activeTab === "theater" ? "bg-yellow-500 text-stone-900" : activeTab === "journey" || activeTab === "reflection" ? "bg-amber-800 text-white" : "bg-[#1A1A1A] text-[#F9F8F6]"}`}>
+            <div className={`flex items-center gap-3 p-4 border self-start md:self-auto shadow-sm transition-all duration-500 ${
+              activeTab === "museum" || activeTab === "theater"
+                ? "bg-[#1E0E10] border-yellow-500/30 text-[#EAD5D5]"
+                : activeTab === "reflection"
+                  ? "bg-[#24201E] border-stone-800 text-[#FAF7F5]"
+                  : activeTab === "minimalism"
+                    ? "bg-[#1C1C1C] border-stone-800 text-[#E4E4E7]"
+                    : "bg-[#FCF9F5] border-amber-400/60 text-amber-950"
+            }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-serif text-lg font-semibold transition-colors duration-500 ${
+                activeTab === "museum" || activeTab === "theater"
+                  ? "bg-yellow-500 text-stone-900"
+                  : activeTab === "reflection"
+                    ? "bg-yellow-600 text-stone-950"
+                    : activeTab === "minimalism"
+                      ? "bg-stone-300 text-stone-950"
+                      : "bg-amber-800 text-white"
+              }`}>
                 DM
               </div>
               <div>
                 <p className="text-[9px] text-stone-400 font-mono tracking-widest uppercase">STUDENT CURATOR</p>
-                <p className={`text-sm font-bold transition-colors duration-500 ${activeTab === "museum" || activeTab === "theater" ? "text-yellow-500" : activeTab === "journey" || activeTab === "reflection" ? "text-amber-900" : "text-[#1A1A1A]"}`}>David Memorandum</p>
+                <p className={`text-sm font-bold transition-colors duration-500 ${
+                  activeTab === "museum" || activeTab === "theater"
+                    ? "text-yellow-500"
+                    : activeTab === "reflection"
+                      ? "text-yellow-400"
+                      : activeTab === "minimalism"
+                        ? "text-stone-100"
+                        : "text-amber-950"
+                }`}>David Memorandum</p>
                 <p className="text-[11px] opacity-75 font-mono">memorandavid@gmail.com</p>
               </div>
             </div>
@@ -546,17 +759,28 @@ export default function App() {
       {/* Navigation Rails */}
       <nav className={`sticky top-0 z-30 border-b shadow-sm relative transition-colors duration-700 ${activeTheme.navBg}`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16 overflow-x-auto whitespace-nowrap scrollbar-none">
-            <div className="flex space-x-1 sm:space-x-3 py-1 items-center">
+          <div className="flex items-center justify-between h-16 gap-2">
+            {/* Scrollable Tab Container */}
+            <div className="flex items-center space-x-1 sm:space-x-3 py-1 overflow-x-auto whitespace-nowrap scrollbar-thin flex-1 pr-2">
               {STYLE_SECTIONS.map((sec, idx) => (
                 <button
                   key={sec.id}
                   id={`nav-tab-${sec.id}`}
                   onClick={() => setActiveTab(sec.id)}
-                  className={`px-4 py-2 text-xs font-mono tracking-widest uppercase transition-all duration-300 ${
+                  className={`px-3 sm:px-4 py-2 text-xs font-mono tracking-widest uppercase transition-all duration-300 ${
                     activeTab === sec.id
-                      ? `${activeTab === "museum" ? "text-yellow-500 border-b-2 border-yellow-500 font-black" : activeTab === "journey" ? "text-amber-800 border-b-2 border-amber-800 font-black" : activeTab === "reflection" ? "text-stone-900 border-b-2 border-stone-900 font-black" : activeTab === "theater" ? "text-red-500 border-b-2 border-red-500 font-black" : "text-red-600 border-b-2 border-red-600 font-black"} scale-102`
-                      : "text-stone-500 hover:text-stone-800"
+                      ? `${
+                          activeTab === "museum"
+                            ? "text-yellow-500 border-b-2 border-yellow-500 font-black"
+                            : activeTab === "journey"
+                              ? "text-amber-800 border-b-2 border-amber-800 font-black"
+                              : activeTab === "reflection"
+                                ? "text-yellow-400 border-b-2 border-yellow-400 font-black"
+                                : activeTab === "theater"
+                                  ? "text-red-500 border-b-2 border-red-500 font-black"
+                                  : "text-stone-100 border-b-2 border-stone-100 font-black"
+                        } scale-102`
+                      : "text-stone-500 hover:text-stone-300"
                   }`}
                 >
                   {`0${idx + 1} / ${sec.name}`}
@@ -566,7 +790,7 @@ export default function App() {
               <button
                 id="nav-tab-paintbox"
                 onClick={() => setActiveTab("paintbox")}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-mono tracking-widest uppercase transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-mono tracking-widest uppercase transition-all duration-300 ${
                   activeTab === "paintbox"
                     ? "text-amber-600 border-b-2 border-amber-600 font-black scale-102"
                     : "text-stone-500 hover:text-amber-600"
@@ -577,13 +801,14 @@ export default function App() {
               </button>
             </div>
 
+            {/* Pinned Action Button */}
             <button
               id="add-artwork-btn"
               onClick={() => setIsAddingPiece(true)}
-              className={`ml-4 flex items-center gap-1.5 text-xs font-mono tracking-widest uppercase px-4 py-2 border shadow transition-all active:scale-95 ${activeTheme.buttonClass}`}
+              className={`shrink-0 flex items-center gap-1.5 text-[10px] sm:text-xs font-mono tracking-widest uppercase px-3 py-2 border shadow transition-all active:scale-95 ${activeTheme.buttonClass}`}
             >
-              <Plus className="w-4 h-4" />
-              ADD OUTPUT
+              <Plus className="w-3.5 h-3.5 sm:w-4 h-4" />
+              <span>ADD OUTPUT</span>
             </button>
           </div>
         </div>
@@ -999,22 +1224,16 @@ export default function App() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                               {[
                                 {
-                                  title: "The Acropolis Pediment",
-                                  medium: "Classical Marble Replica Study",
-                                  desc: "A meticulous study analyzing the sculptural kinetics of ancient divine forms. High-contrast spotlights trace the physical carvings of drapery and muscle tones.",
-                                  img: "https://images.unsplash.com/photo-1608155686393-8fdd966d784d?auto=format&fit=crop&q=80&w=600"
+                                  title: "Neoclassical Architecture Study",
+                                  medium: "Graphite and Charcoal on Heavy Paper",
+                                  desc: "A meticulous study analyzing the architectural balance and structural kinetics of classical ruins from the Mapúan semester portfolio.",
+                                  img: "https://lh3.googleusercontent.com/d/148fmt1XT-g_beltR8ewoB_cXyjEtAgxW"
                                 },
                                 {
-                                  title: "Gilded Neoclassical Archway",
-                                  medium: "Architectural Proportion Drawing",
-                                  desc: "Exploring Roman arches and golden ratio column spacing. Represents the structural framework connecting classical weight with visual stability.",
-                                  img: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=600"
-                                },
-                                {
-                                  title: "The Winged Nike Study",
-                                  medium: "Greek Hellenistic Figurine Draft",
-                                  desc: "Curation analysis of Hellenistic motion in stone, detailing the physical tension between heavy marble and the weightless, sweeping vectors of wings.",
-                                  img: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=600"
+                                  title: "Classical Form & Human Study",
+                                  medium: "Charcoal & Wash Sketch on Card",
+                                  desc: "Exploring traditional draftsmanship and human muscular anatomy under dramatic chiaroscuro spotlight illumination.",
+                                  img: "https://lh3.googleusercontent.com/d/1j1TROkSl0FLEYVUzceE-jp6CWHtCBF-M"
                                 }
                               ].map((item, idx) => (
                                 <div key={idx} className="flex flex-col items-center space-y-4">
@@ -1050,35 +1269,35 @@ export default function App() {
                               </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 justify-center">
                               {[
                                 {
-                                  title: "Curation Study: Classical Grace",
-                                  medium: "Oil on Wood Panel",
-                                  desc: "An elaborate composition utilizing translucent layers of sienna and umber glazes. Evokes high-contrast dramatic spotlighting inspired by Caravaggio.",
-                                  img: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&q=80&w=600"
+                                  title: "Nike of Samothrace Study",
+                                  medium: "Sumi Ink & Graphite Shavings",
+                                  desc: "Analyzing the sweeping, powerful physical vectors of the classical victory figurine on raw textured paper.",
+                                  img: "https://lh3.googleusercontent.com/d/1W095uL_vY_08JuYRbgNxMHKD82gXUriL"
                                 },
                                 {
-                                  title: "Living Stillness (Kado Arranged)",
-                                  medium: "Mixed Organic Installation Draft",
-                                  desc: "A classical oil study mapping organic branches and irises in dialogue with solid marble museum pillars, highlighting asymmetry and temporal impermanence.",
-                                  img: "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&q=80&w=600"
+                                  title: "Unified Semester Synthesis",
+                                  medium: "Gouache & Charcoal Course Masterpiece",
+                                  desc: "The comprehensive capstone drawing reflecting David Memorandum's holistic academic breakthroughs, combining negative space with dynamic values.",
+                                  img: "https://lh3.googleusercontent.com/d/1M12OK5FIvutCZbivhbDjeEFJbk_J-Ni6"
                                 }
                               ].map((item, idx) => (
                                 <div key={idx} className="flex flex-col items-center space-y-4">
                                   {/* Double Heavy Gilded Frame with Hanging Cord Simulation */}
-                                  <div className="border-[16px] border-double border-[#A37424] outline outline-4 outline-yellow-900/30 bg-stone-950 shadow-[0_30px_60px_rgba(0,0,0,0.9)] relative p-3 max-w-full hover:scale-[1.01] transition-transform duration-500">
-                                    <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-                                    <div className="aspect-[4/3] w-80 overflow-hidden relative border-2 border-stone-900">
-                                      <img src={item.img} alt={item.title} referrerPolicy="no-referrer" className="w-full h-full object-cover filter saturate-90 brightness-90" />
+                                  <div className="border-[14px] border-double border-[#A37424] outline outline-2 outline-amber-950 bg-stone-900 shadow-[0_20px_40px_rgba(0,0,0,0.8)] relative p-2 max-w-full hover:scale-[1.02] transition-transform duration-500">
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />
+                                    <div className="aspect-[4/5] w-64 overflow-hidden relative border border-stone-800">
+                                      <img src={item.img} alt={item.title} referrerPolicy="no-referrer" className="w-full h-full object-cover filter brightness-95 contrast-105" />
                                     </div>
                                   </div>
                                   {/* Brass Placard */}
-                                  <div className="bg-gradient-to-r from-amber-500 via-yellow-200 to-amber-500 border border-yellow-700 text-stone-950 text-[10px] font-mono uppercase font-black tracking-widest px-5 py-2 shadow-lg text-center max-w-[260px]">
+                                  <div className="bg-gradient-to-r from-amber-500 via-yellow-200 to-amber-500 border border-yellow-700 text-stone-950 text-[10px] font-mono uppercase font-black tracking-widest px-4 py-1.5 shadow-md text-center max-w-[220px]">
                                     <p className="truncate font-bold">{item.title}</p>
                                     <p className="text-[8px] opacity-75 font-serif italic font-normal tracking-tight">{item.medium}</p>
                                   </div>
-                                  <p className="text-xs text-[#EAD5D5]/80 font-serif leading-relaxed italic text-center max-w-sm px-4 pt-1">
+                                  <p className="text-[11px] text-[#EAD5D5]/80 font-serif leading-relaxed italic text-center max-w-xs px-2 pt-1">
                                     "{item.desc}"
                                   </p>
                                 </div>
@@ -1190,9 +1409,9 @@ export default function App() {
 
                       {/* Interactive Visual Timeline line */}
                       <div className="relative pt-2 pb-6 px-4">
-                        <div className="absolute top-1/2 left-4 right-4 h-1 bg-[#D8C09D] -translate-y-1/2 z-0" />
+                        <div className="absolute top-1/2 left-4 right-4 h-1 bg-[#D8C09D] -translate-y-1/2 z-0 hidden sm:block" />
                         
-                        <div className="relative z-10 grid grid-cols-4 gap-4">
+                        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
                           {[
                             { step: "01", name: "Inception & Drafts", date: "Sep 2026", desc: "First outlines & charcoal notes", current: true },
                             { step: "02", name: "Midterm Portfolios", date: "Oct 2026", desc: "Studies & material selections", current: false },
@@ -1357,24 +1576,121 @@ export default function App() {
                       </p>
                     </div>
 
-                    {/* Interactive Embedded PowerPoint Slide Deck */}
+                    {/* Interactive Slide Deck and Image backup */}
                     <div className="space-y-4">
-                      <div className="border-b pb-2 border-stone-800/10">
-                        <span className="text-[9px] font-mono text-stone-500 font-bold uppercase tracking-widest block">
-                          📊 SEMESTER COURSE OVERVIEW PPT
-                        </span>
-                        <h4 className="font-serif text-2xl font-bold italic text-stone-900 mt-1">
-                          Curatorial Lecture presentation
-                        </h4>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 border-stone-800/20 gap-3">
+                        <div>
+                          <span className="text-[9px] font-mono text-stone-400 font-bold uppercase tracking-widest block">
+                            🖼️ INTERACTIVE PORTFOLIO GALLERY
+                          </span>
+                          <h4 className="font-serif text-2xl font-bold italic text-stone-100 mt-1">
+                            Curatorial Sketchbook & Slide Review
+                          </h4>
+                        </div>
+                        
+                        <div className="text-[10px] font-mono text-stone-400">
+                          Use <kbd className="px-1.5 py-0.5 bg-stone-800 border border-stone-700 text-stone-300 rounded text-[9px]">◀</kbd> and <kbd className="px-1.5 py-0.5 bg-stone-800 border border-stone-700 text-stone-300 rounded text-[9px]">▶</kbd> buttons to change files
+                        </div>
                       </div>
 
-                      <div className="relative aspect-[16/9] w-full bg-stone-100 border-4 border-stone-800 shadow-lg overflow-hidden">
-                        <iframe
-                          src="https://docs.google.com/presentation/d/1jnLSgOAwzqoa4-oFuEI2ZcXyN5i2RRok/embed?start=false&loop=false&delayms=3000"
-                          className="absolute inset-0 w-full h-full border-0"
-                          allowFullScreen
-                          title="Reflection Course Overview Presentation"
-                        ></iframe>
+                      <div className="bg-[#1C1917] border-4 border-stone-800 p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row gap-6 items-center">
+                        {/* Image slider displaying the 6 Google Drive sketches */}
+                        <div className="w-full md:w-3/5 aspect-[4/3] bg-stone-950 border border-stone-800 overflow-hidden relative flex items-center justify-center group">
+                          
+                          {/* Left Navigation Overlay Arrow */}
+                          <button
+                            onClick={() => setActiveReflectionSlide((prev) => (prev > 0 ? prev - 1 : 5))}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-stone-950/70 border border-stone-800 text-yellow-400 flex items-center justify-center hover:bg-stone-900 hover:text-white transition-all z-20 opacity-80 group-hover:opacity-100"
+                            title="Previous Image"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+
+                          {/* Right Navigation Overlay Arrow */}
+                          <button
+                            onClick={() => setActiveReflectionSlide((prev) => (prev < 5 ? prev + 1 : 0))}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-stone-950/70 border border-stone-800 text-yellow-400 flex items-center justify-center hover:bg-stone-900 hover:text-white transition-all z-20 opacity-80 group-hover:opacity-100"
+                            title="Next Image"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+
+                          <img
+                            src={[
+                              "https://lh3.googleusercontent.com/d/1h86-EtQoaWWzCWWQ-NMZ82hxQBuF2dXZ",
+                              "https://lh3.googleusercontent.com/d/1NxNdSv1VA5BSsif0-F3GnGVnjOtLcmup",
+                              "https://lh3.googleusercontent.com/d/12af1niuoCG8c5C4sZSMMi2CzJEPqbvGO",
+                              "https://lh3.googleusercontent.com/d/1coO28vWMlzretMqg36K7KPI5kA52lbET",
+                              "https://lh3.googleusercontent.com/d/14XTjACYk8nahaasLjsjHWlmLTBf1A-Et",
+                              "https://lh3.googleusercontent.com/d/1owIe-cOrT6cvSfo6kW6nIAFiW8x6C45g"
+                            ][activeReflectionSlide]}
+                            alt={`Reflection Slide ${activeReflectionSlide + 1}`}
+                            className="max-h-full max-w-full object-contain filter contrast-105 select-none transition-all duration-300"
+                            referrerPolicy="no-referrer"
+                          />
+                          
+                          {/* Slide Counter Indicator badge */}
+                          <div className="absolute top-3 left-3 bg-stone-950/80 text-yellow-400 border border-stone-800 text-[9px] font-mono px-2 py-1 tracking-widest">
+                            FILE {activeReflectionSlide + 1} OF 6
+                          </div>
+                        </div>
+
+                        {/* Navigation Controls and Details */}
+                        <div className="w-full md:w-2/5 space-y-4">
+                          <span className="text-[10px] font-mono text-yellow-400 uppercase tracking-widest font-black block">
+                            CURATORIAL SPECIFICATION
+                          </span>
+                          
+                          <h5 className="font-serif text-lg font-bold text-stone-100">
+                            {[
+                              "Semester Blueprint & Core Layout",
+                              "Human Form and Musculature Study",
+                              "Classical Proportional Harmony",
+                              "Abstract Charcoal & Inkwash Tones",
+                              "Asymmetry and Nature Composition",
+                              "Holistic Creative Capstone Synthesis"
+                            ][activeReflectionSlide]}
+                          </h5>
+
+                          <p className="text-xs text-stone-300 font-serif italic leading-relaxed">
+                            {[
+                              "A detailed curatorial blueprint mapping the structural geometry, golden ratios, and academic frameworks explored during the initial portion of the semester.",
+                              "An anatomically disciplined drawing capturing bodily proportion, lighting focus, and tactile graphite line rendering.",
+                              "A delicate study exploring high-contrast values, ancient architectural replica references, and vector curvatures.",
+                              "A bold composition investigating organic black carbon dust, wet-brushed deep inks, and negative spaces.",
+                              "An arrangement testing natural asymmetry, visual pauses, and structural balance within traditional borders.",
+                              "The capstone presentation reflecting David Memorandum's unified course breakthroughs, personal reflections, and final milestone achievements."
+                            ][activeReflectionSlide]}
+                          </p>
+
+                          <div className="flex gap-2 pt-2">
+                            <button
+                              onClick={() => setActiveReflectionSlide((prev) => (prev > 0 ? prev - 1 : 5))}
+                              className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-100 font-mono text-[9px] uppercase tracking-widest flex items-center gap-1"
+                            >
+                              <ChevronLeft className="w-3 h-3 text-yellow-400" /> PREVIOUS
+                            </button>
+                            <button
+                              onClick={() => setActiveReflectionSlide((prev) => (prev < 5 ? prev + 1 : 0))}
+                              className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-100 font-mono text-[9px] uppercase tracking-widest flex items-center gap-1"
+                            >
+                              NEXT <ChevronRight className="w-3 h-3 text-yellow-400" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-6 gap-1 pt-1.5">
+                            {[0, 1, 2, 3, 4, 5].map((idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setActiveReflectionSlide(idx)}
+                                className={`h-1 transition-all ${
+                                  activeReflectionSlide === idx ? "bg-yellow-400 animate-pulse" : "bg-stone-800 hover:bg-stone-600"
+                                }`}
+                                title={`Slide ${idx + 1}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1456,59 +1772,186 @@ export default function App() {
                     <div className="absolute top-0 inset-x-0 h-48 bg-[linear-gradient(180deg,_rgba(127,29,29,0.15)_0%,_transparent_100%)] pointer-events-none" />
                     
                     {/* Theatrical Header */}
-                    <div className="relative border-b pb-4 border-red-900/30 text-center max-w-xl mx-auto space-y-2">
+                    <div className="relative border-b pb-4 border-red-900/30 text-center max-w-2xl mx-auto space-y-2">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 border border-yellow-500/20 text-[9px] font-mono uppercase bg-stone-950 text-yellow-500 font-bold tracking-widest mx-auto">
-                        🎭 THE STAGE IS LIT • PREMIERE PREVIEW
+                        🎭 THE CHANDELIER STAGE • LIVE EXPERIENCE
                       </span>
                       <h2 className="font-serif text-3xl sm:text-4xl font-black text-yellow-500 tracking-tight leading-none italic">
                         The Center Stage Theater
                       </h2>
                       <p className="text-xs font-serif leading-relaxed text-[#D2C2C2]/80">
-                        Immerse yourself in active theatrical choreography, experiencing dramatic visual contrast under direct stage spotlights.
+                        Experience the premiere of Paquita. Use the master board below to open/close the velvet stage curtains, adjust the overhead physical light canisters, and cue the crowd applause.
                       </p>
                       
-                      {/* Spotlight control button */}
-                      <button
-                        onClick={() => setTheaterSpotlight(!theaterSpotlight)}
-                        className="mt-2.5 px-4 py-1.5 bg-[#400B13] hover:bg-[#60121E] border border-red-500/30 text-yellow-500 font-mono text-[9px] uppercase tracking-widest font-black transition-all shadow-inner"
-                      >
-                        {theaterSpotlight ? "🔦 DIM STAGE LIGHTS" : "💡 ACTIVATE CENTER SPOTLIGHTS"}
-                      </button>
-                    </div>
+                      {/* Master control board */}
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
+                        <button
+                          onClick={() => setCurtainsOpen(!curtainsOpen)}
+                          className={`px-4 py-2 border font-mono text-[9px] uppercase tracking-widest font-black transition-all shadow-md ${
+                            curtainsOpen 
+                              ? "bg-[#60121E] hover:bg-[#801B2B] text-yellow-400 border-red-500/30" 
+                              : "bg-emerald-900 hover:bg-emerald-800 text-white border-emerald-500/30 animate-pulse"
+                          }`}
+                        >
+                          {curtainsOpen ? "🏮 CLOSE STAGE CURTAINS" : "🎭 OPEN STAGE CURTAINS"}
+                        </button>
 
-                    {/* Center Stage Presentation Container with Curtains */}
-                    <div className="grid grid-cols-12 gap-0 relative bg-black/80 border-4 border-[#3D0B12] shadow-inner overflow-hidden min-h-[420px]">
-                      
-                      {/* Left Curtain */}
-                      <div className="col-span-2 bg-gradient-to-r from-[#1E0407] via-[#520B15] to-[#250408] border-r-2 border-yellow-600/30 flex flex-col justify-between p-3 relative shadow-2xl select-none z-20">
-                        {/* Drape curves overlay */}
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,_transparent,_transparent_6px,_rgba(0,0,0,0.35)_6px,_rgba(0,0,0,0.35)_12px)] opacity-50 pointer-events-none" />
-                        <span className="text-[8px] font-mono text-yellow-600/60 font-black tracking-widest writing-vertical uppercase text-center mt-4">PAQUITA</span>
-                        <span className="text-[8px] font-mono text-yellow-600/60 font-black tracking-widest uppercase text-center mb-4">★ ★ ★</span>
+                        <button
+                          onClick={() => setTheaterSpotlight(!theaterSpotlight)}
+                          className="px-4 py-2 bg-[#400B13] hover:bg-[#60121E] border border-red-500/30 text-yellow-500 font-mono text-[9px] uppercase tracking-widest font-black transition-all shadow-md"
+                        >
+                          {theaterSpotlight ? "🔦 TURN OFF SPOTLIGHTS" : "💡 TURN ON SPOTLIGHTS"}
+                        </button>
+
+                        <button
+                          onClick={handlePlayApplause}
+                          disabled={isApplausePlaying}
+                          className={`px-4 py-2 border font-mono text-[9px] uppercase tracking-widest font-black transition-all shadow-md flex items-center gap-2 ${
+                            isApplausePlaying 
+                              ? "bg-amber-600 text-stone-950 border-yellow-400 cursor-not-allowed" 
+                              : "bg-yellow-500 hover:bg-yellow-600 text-stone-950 border-yellow-600"
+                          }`}
+                        >
+                          <span>👏</span>
+                          {isApplausePlaying ? "CHEERING PLAYING (5s)..." : "TRIGGER APPLAUSE & CHEERING"}
+                        </button>
                       </div>
 
-                      {/* Main Stage Spotlight Field */}
-                      <div className="col-span-8 bg-[#070102] relative p-6 flex flex-col items-center justify-center min-h-[380px] z-10 overflow-hidden">
+                      {isApplausePlaying && (
+                        <div className="text-[10px] text-yellow-400 font-mono tracking-widest uppercase animate-pulse pt-2 flex items-center justify-center gap-2">
+                          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
+                          🔊 Audience is roaring! Cheering, clapping and shouting "Bravo!"
+                        </div>
+                      )}
+                    </div>
+
+                    {/* PHYSICAL OVERHEAD STAGE LIGHTS RIG */}
+                    <div className="max-w-4xl mx-auto flex justify-around items-end h-12 border-b-2 border-[#1E0407] bg-[#120305] px-12 relative">
+                      <div className="absolute top-0 inset-x-0 h-1 bg-[#2C0A0E]" />
+                      
+                      {/* Light Canister 1 */}
+                      <div className="flex flex-col items-center relative w-12">
+                        <div className="w-1 h-3 bg-stone-700" /> {/* Support bracket */}
+                        <div className={`w-6 h-5 bg-gradient-to-b from-stone-800 to-stone-900 border border-stone-700 rounded-b-md shadow-md transform -rotate-12 transition-all duration-500 ${theaterSpotlight ? "border-yellow-500/80" : ""}`}>
+                          {/* Bulb light lens */}
+                          <div className={`mx-auto mt-2.5 w-3.5 h-1 rounded-full transition-all duration-500 ${theaterSpotlight ? "bg-yellow-300 shadow-[0_0_12px_#F59E0B]" : "bg-stone-950"}`} />
+                        </div>
+                      </div>
+
+                      {/* Light Canister 2 (Center) */}
+                      <div className="flex flex-col items-center relative w-12">
+                        <div className="w-1 h-3 bg-stone-700" />
+                        <div className={`w-6 h-5 bg-gradient-to-b from-stone-800 to-stone-900 border border-stone-700 rounded-b-md shadow-md transition-all duration-500 ${theaterSpotlight ? "border-yellow-500/80" : ""}`}>
+                          <div className={`mx-auto mt-2.5 w-3.5 h-1 rounded-full transition-all duration-500 ${theaterSpotlight ? "bg-yellow-300 shadow-[0_0_12px_#F59E0B]" : "bg-stone-950"}`} />
+                        </div>
+                      </div>
+
+                      {/* Light Canister 3 */}
+                      <div className="flex flex-col items-center relative w-12">
+                        <div className="w-1 h-3 bg-stone-700" />
+                        <div className={`w-6 h-5 bg-gradient-to-b from-stone-800 to-stone-900 border border-stone-700 rounded-b-md shadow-md transform rotate-12 transition-all duration-500 ${theaterSpotlight ? "border-yellow-500/80" : ""}`}>
+                          <div className={`mx-auto mt-2.5 w-3.5 h-1 rounded-full transition-all duration-500 ${theaterSpotlight ? "bg-yellow-300 shadow-[0_0_12px_#F59E0B]" : "bg-stone-950"}`} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Center Stage Presentation Container with Overlay Curtains */}
+                    <div className="max-w-4xl mx-auto relative bg-[#040102] border-4 border-[#3D0B12] shadow-[0_25px_50px_rgba(0,0,0,0.95)] overflow-hidden min-h-[460px]">
+                      
+                      {/* Realistic overhead drapery trim */}
+                      <div className="absolute top-0 inset-x-0 h-8 bg-gradient-to-b from-[#7F1D1D] to-[#3B0712] border-b-2 border-yellow-600/30 shadow-md z-40 relative flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,_transparent,_transparent_8px,_rgba(0,0,0,0.25)_8px,_rgba(0,0,0,0.25)_16px)] opacity-30" />
+                        <div className="w-full h-1 bg-[radial-gradient(ellipse_at_center,_#EAB308_0%,_transparent_70%)] opacity-80" />
+                        <span className="text-[7px] font-mono tracking-[0.3em] text-yellow-500/80 uppercase font-black z-10">THE CHANDELIER SECTOR</span>
+                      </div>
+
+                      {/* STAGE SPACE CONTAINER */}
+                      <div className="relative w-full h-[410px] bg-[#070102] flex flex-col items-center justify-center overflow-hidden">
                         
-                        {/* Simulated Spotlights beam */}
+                         {/* High-performance CSS animation styles injected directly */}
+                         <style>{`
+                           @keyframes stage-confetti-physics {
+                             0% {
+                               transform: translate3d(0, 0, 0) rotate(0deg);
+                               opacity: 1;
+                             }
+                             35% {
+                               transform: translate3d(calc(var(--x-dist) * 0.45), var(--y-dist), 0) rotate(calc(var(--rot-end) * 0.35));
+                               opacity: 1;
+                             }
+                             80% {
+                               opacity: 0.95;
+                             }
+                             100% {
+                               transform: translate3d(var(--x-dist), calc(var(--y-dist) + 380px), 0) rotate(var(--rot-end));
+                               opacity: 0;
+                             }
+                           }
+                           .animate-confetti-run {
+                             animation: stage-confetti-physics var(--duration) cubic-bezier(0.1, 0.7, 0.4, 1) var(--delay) forwards;
+                           }
+                         `}</style>
+
+                         {/* Confetti particles */}
+                         {stageConfetti.map((particle) => (
+                           <div
+                             key={particle.id}
+                             className="absolute pointer-events-none rounded-sm z-20 shadow-sm animate-confetti-run"
+                             style={{
+                               left: particle.side === "left" ? "5%" : "95%",
+                               top: "92%",
+                               width: `${particle.size}px`,
+                               height: `${particle.size * 0.6}px`,
+                               backgroundColor: particle.color,
+                               // Set custom CSS variables for keyframe animations
+                               "--x-dist": `${particle.xDist}px`,
+                               "--y-dist": `${particle.yDist}px`,
+                               "--rot-end": `${particle.rotEnd}deg`,
+                               "--duration": `${particle.duration}s`,
+                               "--delay": `${particle.delay}s`,
+                             } as any}
+                           />
+                         ))}
+
+                        {/* Realistic Spotlight Beams projecting from overhead canisters */}
                         {theaterSpotlight && (
-                          <div 
-                            className="absolute inset-0 pointer-events-none z-0 mix-blend-screen transition-all duration-1000 animate-pulse"
-                            style={{
-                              background: "radial-gradient(ellipse at top, rgba(234, 179, 8, 0.22) 0%, rgba(234, 179, 8, 0.05) 50%, transparent 100%)"
-                            }}
-                          />
+                          <>
+                            {/* Spotlight Left beam */}
+                            <div 
+                              className="absolute top-0 left-[15%] w-[40%] h-full pointer-events-none z-10 mix-blend-screen opacity-70 transition-all duration-1000 origin-top"
+                              style={{
+                                clipPath: "polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)",
+                                background: "linear-gradient(to bottom, rgba(253, 224, 71, 0.18) 0%, rgba(253, 224, 71, 0.04) 60%, transparent 100%)"
+                              }}
+                            />
+                            {/* Spotlight Center beam */}
+                            <div 
+                              className="absolute top-0 left-[30%] w-[40%] h-full pointer-events-none z-10 mix-blend-screen opacity-80 transition-all duration-1000 origin-top animate-pulse"
+                              style={{
+                                clipPath: "polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)",
+                                background: "linear-gradient(to bottom, rgba(253, 224, 71, 0.22) 0%, rgba(253, 224, 71, 0.05) 50%, transparent 100%)"
+                              }}
+                            />
+                            {/* Spotlight Right beam */}
+                            <div 
+                              className="absolute top-0 right-[15%] w-[40%] h-full pointer-events-none z-10 mix-blend-screen opacity-70 transition-all duration-1000 origin-top"
+                              style={{
+                                clipPath: "polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)",
+                                background: "linear-gradient(to bottom, rgba(253, 224, 71, 0.18) 0%, rgba(253, 224, 71, 0.04) 60%, transparent 100%)"
+                              }}
+                            />
+                          </>
                         )}
 
-                        {/* Centered Stage Photo Frame */}
-                        <div className="relative z-10 max-w-md w-full transition-all duration-700">
-                          {/* Photo Frame Container */}
-                          <div className="border-[14px] border-double border-[#A37424] outline outline-4 outline-[#400B13] bg-stone-900 shadow-[0_25px_60px_rgba(0,0,0,0.95)] p-2 relative">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-white/5 pointer-events-none" />
-                            <div className="aspect-[4/5] w-full overflow-hidden bg-black border border-[#250408]">
+                        {/* Interactive Performance Video Screen Frame */}
+                        <div className="relative z-10 max-w-md w-full transition-all duration-700 px-4">
+                          {/* Photo Frame Container styled like a heavy wooden stage monitor */}
+                          <div className="border-[12px] border-double border-[#A37424] outline outline-2 outline-[#1E0407] bg-stone-900 shadow-[0_20px_45px_rgba(0,0,0,0.95)] p-1 relative">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/5 pointer-events-none" />
+                            <div className="aspect-[16/10] w-full overflow-hidden bg-black border border-[#250408]">
                               <iframe
                                 src="https://drive.google.com/file/d/1moPl3pl6A3cjzP5-SlG62mzpe-adQBa0/preview"
-                                className="w-full h-full border-0 filter brightness-105 saturate-95 font-sans"
+                                className="w-full h-full border-0 filter brightness-105 saturate-100 font-sans"
                                 allow="autoplay"
                                 title="Center Stage Theater Performance"
                               ></iframe>
@@ -1516,54 +1959,119 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Stage Floor Boards */}
-                        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-b from-[#2E0F14] to-[#120305] border-t border-yellow-600/20 z-0">
-                          <div className="w-full h-full bg-[linear-gradient(90deg,_rgba(0,0,0,0.2)_1px,_transparent_1px)] bg-[size:16px_100%] opacity-40" />
+                        {/* Traditional Stage Floor Boards */}
+                        <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-b from-[#2E0F14] to-[#0A0203] border-t-2 border-yellow-600/30 z-10">
+                          {/* Board planks lines */}
+                          <div className="w-full h-full bg-[linear-gradient(90deg,_rgba(0,0,0,0.3)_1px,_transparent_1px)] bg-[size:24px_100%] opacity-50" />
+                          {/* Footlights reflection overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-transparent via-yellow-500/5 to-yellow-500/10 pointer-events-none mix-blend-overlay" />
+                        </div>
+
+                        {/* LEFT ABSOLUTE VELVET CURTAIN OVERLAY */}
+                        <div 
+                          className={`absolute top-8 bottom-0 left-0 bg-gradient-to-r from-[#180204] via-[#5C0D18] to-[#2E050A] border-r-4 border-yellow-500/50 shadow-2xl z-30 transition-all duration-1000 ease-in-out select-none flex flex-col justify-between p-4 ${
+                            curtainsOpen ? "w-0 -translate-x-full opacity-0 pointer-events-none" : "w-1/2 translate-x-0 opacity-100"
+                          }`}
+                        >
+                          {/* Drape folding vertical pleat ridges */}
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,_transparent,_transparent_8px,_rgba(0,0,0,0.35)_8px,_rgba(0,0,0,0.35)_16px)] opacity-60 pointer-events-none" />
+                          <div className="absolute inset-y-0 right-1 w-0.5 bg-gradient-to-b from-yellow-400 via-transparent to-yellow-400 opacity-60" />
+                          <div className="relative z-10 mt-6 space-y-1">
+                            <span className="text-[10px] font-mono text-yellow-500/80 font-black tracking-widest block uppercase text-center font-bold">PAQUITA</span>
+                            <span className="text-[8px] font-mono text-yellow-600/60 font-medium tracking-wide block text-center">PREMIERE BALLET</span>
+                          </div>
+                          
+                          {/* Golden tassel cord drape details */}
+                          <div className="relative z-10 mx-auto w-10 h-10 rounded-full border border-yellow-500/30 bg-[#120305] flex items-center justify-center text-xs text-yellow-400 shadow-lg cursor-pointer hover:scale-110 transition-transform" onClick={() => setCurtainsOpen(true)}>
+                            🏮
+                          </div>
+
+                          <div className="relative z-10 mb-6 text-center text-[8px] font-mono text-yellow-600/60 tracking-widest">
+                            ★ ACTE I ★
+                          </div>
+                        </div>
+
+                        {/* RIGHT ABSOLUTE VELVET CURTAIN OVERLAY */}
+                        <div 
+                          className={`absolute top-8 bottom-0 right-0 bg-gradient-to-l from-[#180204] via-[#5C0D18] to-[#2E050A] border-l-4 border-yellow-500/50 shadow-2xl z-30 transition-all duration-1000 ease-in-out select-none flex flex-col justify-between p-4 ${
+                            curtainsOpen ? "w-0 translate-x-full opacity-0 pointer-events-none" : "w-1/2 translate-x-0 opacity-100"
+                          }`}
+                        >
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,_transparent,_transparent_8px,_rgba(0,0,0,0.35)_8px,_rgba(0,0,0,0.35)_16px)] opacity-60 pointer-events-none" />
+                          <div className="absolute inset-y-0 left-1 w-0.5 bg-gradient-to-b from-yellow-400 via-transparent to-yellow-400 opacity-60" />
+                          <div className="relative z-10 mt-6 space-y-1">
+                            <span className="text-[10px] font-mono text-yellow-500/80 font-black tracking-widest block uppercase text-center font-bold font-bold">MAPÚA HALL</span>
+                            <span className="text-[8px] font-mono text-yellow-600/60 font-medium tracking-wide block text-center">CHOREOGRAPHY STUDY</span>
+                          </div>
+
+                          {/* Dynamic helper text to click to open */}
+                          {!curtainsOpen && (
+                            <button 
+                              onClick={() => setCurtainsOpen(true)}
+                              className="relative z-10 bg-yellow-500/90 hover:bg-yellow-400 text-stone-950 font-mono text-[8px] uppercase tracking-widest font-black py-1 px-2 mx-auto shadow-md transition-all animate-bounce rounded-xs"
+                            >
+                              OPEN CURTAINS
+                            </button>
+                          )}
+
+                          <div className="relative z-10 mb-6 text-center text-[8px] font-mono text-yellow-600/60 tracking-widest">
+                            ★ MCXXVI ★
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* REDISCOVERING THE MAGIC: THE USER'S WORDS REFLECTIVE PLAQUE */}
+                    <div className="bg-[#160608] border-4 border-double border-red-900/50 p-8 sm:p-10 space-y-6 max-w-3xl mx-auto shadow-[0_20px_50px_rgba(0,0,0,0.6)] relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(234,179,8,0.04)_0%,_transparent_70%)] pointer-events-none" />
+                      
+                      {/* Gilded brass plate screws */}
+                      <div className="absolute top-3 left-3 w-2.5 h-2.5 rounded-full bg-yellow-600/40 border border-yellow-700/60" />
+                      <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-yellow-600/40 border border-yellow-700/60" />
+                      <div className="absolute bottom-3 left-3 w-2.5 h-2.5 rounded-full bg-yellow-600/40 border border-yellow-700/60" />
+                      <div className="absolute bottom-3 right-3 w-2.5 h-2.5 rounded-full bg-yellow-600/40 border border-yellow-700/60" />
+
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-stone-950 text-[9px] font-mono font-black uppercase tracking-widest px-4 py-1.5 rounded-sm border border-yellow-600 shadow-md">
+                        🏆 THEATRE PREMIERE MEMOIR
+                      </div>
+                      
+                      <div className="space-y-6 pt-2 text-center relative z-10">
+                        <h4 className="font-serif text-2xl font-black italic text-yellow-500 tracking-normal leading-tight">
+                          "Rediscovering the Magic: How Paquita Reignited My Love for the Stage"
+                        </h4>
+                        
+                        <div className="space-y-4 font-serif text-[13px] leading-relaxed text-[#F3E2E2] max-w-2xl mx-auto text-justify indent-8">
+                          <p>
+                            Stepping into the theater for the premiere of Paquita, I didn’t quite know what to expect. The last time I had witnessed a live theater show was back in 2018, and years of screens had made the memory of the stage fade into something abstract. But as the lights began to dim and the first notes of the orchestra swelled, a wave of anticipation washed over me.
+                          </p>
+                          <p>
+                            The performance was nothing short of spellbinding. The dancers moved with a seamless blend of power and grace, their every leap and turn carrying a physical weight that no digital recording could ever fully capture. What struck me most was the raw, unedited energy of the live performance—the sound of pointe shoes hitting the stage, the collective intake of breath from the audience, and the vibrant play of light on the velvet curtains.
+                          </p>
+                          <p>
+                            Paquita didn’t just entertain me; it reminded me of the irreplaceable magic of physical space and human presence. This theatrical study and my creative portfolio are a direct tribute to that rediscovery—a journey of bringing the weight, color, and poetry of the stage back into my active daily life.
+                          </p>
                         </div>
                       </div>
 
-                      {/* Right Curtain */}
-                      <div className="col-span-2 bg-gradient-to-l from-[#1E0407] via-[#520B15] to-[#250408] border-l-2 border-yellow-600/30 flex flex-col justify-between p-3 relative shadow-2xl select-none z-20">
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,_transparent,_transparent_6px,_rgba(0,0,0,0.35)_6px,_rgba(0,0,0,0.35)_12px)] opacity-50 pointer-events-none" />
-                        <span className="text-[8px] font-mono text-yellow-600/60 font-black tracking-widest writing-vertical uppercase text-center mt-4">ACTE I</span>
-                        <span className="text-[8px] font-mono text-yellow-600/60 font-black tracking-widest uppercase text-center mb-4">★ ★ ★</span>
-                      </div>
-
-                    </div>
-
-                    {/* Reflective Plaque on the Bottom */}
-                    <div className="bg-[#160608] border-2 border-red-900/40 p-6 space-y-4 max-w-2xl mx-auto shadow-lg relative">
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-stone-950 text-[9px] font-mono font-black uppercase tracking-widest px-3 py-1 rounded-sm border border-yellow-600 shadow-md">
-                        🏆 OFFICIAL REFLECTION PLAQUE
-                      </div>
-                      
-                      <div className="space-y-3 pt-2 text-center">
-                        <h4 className="font-serif text-xl font-bold italic text-yellow-500 tracking-wide">
-                          "The Stage Premiere of Paquita: A Symphony of Poise and Passion"
-                        </h4>
-                        <p className="text-xs font-serif leading-relaxed text-[#FAF2DF]/90 max-w-xl mx-auto italic">
-                          "In this theater study, we examine the choreographic alignment of movement and direct theatrical lighting. Placed on center stage, the composition captures the tension between gravity and physical grace—the weight of classical ballet rules in conversation with absolute poetic expression."
-                        </p>
-                      </div>
-
                       {/* Interactive Director prompt response logger */}
-                      <div className="pt-4 border-t border-red-900/20 font-serif text-xs text-[#EAD5D5]/80 space-y-3.5 max-w-md mx-auto">
+                      <div className="pt-6 border-t border-red-900/40 font-serif text-xs text-[#EAD5D5]/80 space-y-3.5 max-w-md mx-auto">
                         <div className="space-y-2">
                           <label className="block text-[9px] font-mono text-yellow-600 uppercase tracking-widest font-black text-center">
-                            Record Your Dramatic Observation:
+                            Record Your Theatrical Review:
                           </label>
                           <textarea 
                             rows={2} 
-                            placeholder="Add your theatrical review or personal connection to this stage production..."
+                            placeholder="Add your own review or thoughts on the Paquita memoir..."
                             className="w-full px-3 py-2 bg-[#0A0203] border border-red-900/40 focus:outline-none focus:ring-1 focus:ring-yellow-500/40 text-[#FAF2DF] text-xs font-serif italic"
                           />
                         </div>
                         <button
                           type="button"
-                          onClick={() => alert("Theatrical Review Logged! Your analysis is permanently recorded.")}
-                          className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-stone-950 font-mono text-[9px] uppercase font-black tracking-widest border border-yellow-600 shadow-md transition-all rounded-xs"
+                          onClick={() => alert("Theatrical Review Logged! Your analysis of the Paquita premiere is permanently recorded.")}
+                          className="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-stone-950 font-mono text-[9px] uppercase font-black tracking-widest border border-yellow-600 shadow-md transition-all rounded-xs font-bold"
                         >
-                          📌 COMMIT PERFORMANCE ENTRY
+                          📌 SUBMIT ENTRY TO ARCHIVE
                         </button>
                       </div>
                     </div>

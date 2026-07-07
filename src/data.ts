@@ -20,7 +20,7 @@ export const STYLE_SECTIONS: StyleSection[] = [
   },
   {
     id: "journey",
-    name: "The Journey",
+    name: "Journey",
     tagline: "A Chronological Pilgrimage of Lifetime Exploration",
     description: "This phase maps our transformation across time and space. Art is not a static object; it is an active trail of sketches, struggles, mistakes, and ultimate breakthroughs. Follow our progression from inception to release.",
     materialsUsed: ["Distressed heavy watercolor paper", "Terracotta pigment paste", "Prussian blue ink wash", "Expedition journals"],
@@ -37,7 +37,7 @@ export const STYLE_SECTIONS: StyleSection[] = [
   },
   {
     id: "museum",
-    name: "The Museum",
+    name: "Museum",
     tagline: "Curated Galleries of Fine Art & Live Motion",
     description: "Step inside a classical, sophisticated museum experience. Styled with gilded frames, brass plaques, and dim spotlit galleries, this exhibition integrates traditional oil painting, sculpture study, and cinematic motion-capture video reels.",
     materialsUsed: ["Heavy oils on panel", "Lapis lazuli glazes", "Ornate gilded gold leafing", "16mm film projections"],
@@ -71,7 +71,7 @@ export const STYLE_SECTIONS: StyleSection[] = [
   },
   {
     id: "theater",
-    name: "The Theater",
+    name: "Theater",
     tagline: "Dramatic Storytelling & Stage Magic",
     description: "Immerse yourself in deep velvet drapery, stage lighting, and powerful live-performance memoirs. An exploration of non-verbal narrative, pacing, physical movement, and theatrical wonder.",
     materialsUsed: ["Chiaroscuro stage lights", "Velvet theater drapes", "Live production memoirs", "Performative photography"],
